@@ -1,0 +1,8 @@
+{"inputs":"Q: Pick the odd word out: white, black, red, apple\nA:","targets":["apple"],"multiple_choice_targets":["white","black","red","apple"],"multiple_choice_scores":[0,0,0,1],"idx":58}
+{"inputs":"Q: Pick the odd word out: listen, study, tell, happy, watch\nA:","targets":["happy"],"multiple_choice_targets":["listen","study","tell","happy","watch"],"multiple_choice_scores":[0,0,0,1,0],"idx":0}
+{"inputs":"Q: Pick the odd word out: table, rabbit, cow, hen\nA:","targets":["table"],"multiple_choice_targets":["table","rabbit","cow","hen"],"multiple_choice_scores":[1,0,0,0],"idx":63}
+{"inputs":"Q: Pick the odd word out: Dublin, France, Tokyo, Athens, Paris, San Francisco\nA:","targets":["France"],"multiple_choice_targets":["Dublin","France","Tokyo","Athens","Paris","San Francisco"],"multiple_choice_scores":[0,1,0,0,0,0],"idx":16}
+{"inputs":"Q: Pick the odd word out: museum, hospital, school, balcony, church\nA:","targets":["balcony"],"multiple_choice_targets":["museum","hospital","school","balcony","church"],"multiple_choice_scores":[0,0,0,1,0],"idx":36}
+{"inputs":"Q: Pick the odd word out: worked, studied, live, walked\nA:","targets":["live"],"multiple_choice_targets":["worked","studied","live","walked"],"multiple_choice_scores":[0,0,1,0],"idx":24}
+{"inputs":"Q: Pick the odd word out: table, rabbit, cow, hen\nA:","targets":["table"],"multiple_choice_targets":["table","rabbit","cow","hen"],"multiple_choice_scores":[1,0,0,0],"idx":63}
+{"inputs":"Q: Pick the odd word out: mouse, dragonfly, ladybug, ant, beetle\nA:","targets":["mouse"],"multiple_choice_targets":["mouse","dragonfly","ladybug","ant","beetle"],"multiple_choice_scores":[1,0,0,0,0],"idx":67}
