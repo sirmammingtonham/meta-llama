@@ -4,15 +4,19 @@ from typing import List, Dict, Any
 from transformers import PreTrainedTokenizerBase
 from torch.utils.data import DataLoader
 
-import torch
 import numpy as np
 import itertools
+
+
+def load_datasets(dataset_names: List[str]) -> Dict[str, Dataset]:
+    pass
 
 
 def preprocess_dataset(
     ds: Dataset,
     tokenizer: PreTrainedTokenizerBase,
     method="direct",
+    include_choices=False,
     num_procs=8,
 ) -> Dataset:
     def preprocess_function(examples):
@@ -20,36 +24,44 @@ def preprocess_dataset(
         * tokenizes dataset
         * token_type_ids are 1 where there are label tokens and 0 otherwise
         """
-        inputs = tokenizer(
-            [inputs + " \n " for inputs in examples["inputs"]], add_special_tokens=False
-        )
-        targets = tokenizer(
-            [" ".join(targets) + " \n\n " for targets in examples["targets"]],
-            add_special_tokens=False,
-        )
+        if include_choices:
+            inputs = [
+                f"{inp}\nchoice: " + "\nchoice: ".join(choices) + " \n\n"
+                for inp, choices in zip(
+                    examples["inputs"], examples["multiple_choice_targets"]
+                )
+            ]
+        else:
+            inputs = [f"{inp} \n\n" for inp in examples["inputs"]]
 
-        # flip the location of inputs and targets for channel method
+        targets = [" ".join(targets) + " \n\n\n" for targets in examples["targets"]]
+
+        # swap inputs and targets if method is "channel"
         if method == "channel":
             inputs, targets = targets, inputs
 
+        # tokenize inputs and targets, and prepare outputs dictionary
+        input_tokenized = tokenizer(inputs, add_special_tokens=False)
+        target_tokenized = tokenizer(targets, add_special_tokens=False)
         outputs = {
             "input_ids": [],
             "attention_mask": [],
             "token_type_ids": [],
         }
 
-        for i in range(len(inputs["input_ids"])):
-            outputs["input_ids"].append(
-                inputs["input_ids"][i] + targets["input_ids"][i]
-            )
-            outputs["attention_mask"].append(
-                inputs["attention_mask"][i] + targets["attention_mask"][i]
-            )
-            outputs["token_type_ids"].append(
-                [0] * len(inputs["input_ids"][i])
-                + [1] * len(targets["input_ids"][i])
-                + [0]
-            )
+        # merge input and target tokens and prepare outputs
+        for i in range(len(input_tokenized["input_ids"])):
+            input_ids = input_tokenized["input_ids"][i]
+            target_ids = target_tokenized["input_ids"][i]
+            outputs["input_ids"].append(input_ids + target_ids)
+
+            input_attention = input_tokenized["attention_mask"][i]
+            target_attention = target_tokenized["attention_mask"][i]
+            outputs["attention_mask"].append(input_attention + target_attention)
+
+            input_token_type = [0] * len(input_ids)
+            target_token_type = [1] * (len(target_ids) - 2) + [0, 0]
+            outputs["token_type_ids"].append(input_token_type + target_token_type)
 
         return outputs
 
