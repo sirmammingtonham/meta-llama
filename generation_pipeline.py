@@ -33,7 +33,6 @@ class GenerationPipeline:
         train_dir: file path to directory to write data to
         train_dir_gen: file path to dump generated instances
         error_dir: file path to dump error related data
-        k: amount of in-context examples for generation
         task_seed_size: size of seed examples per task
         filter_errors: file name (csv) to write filter errors to
         sk: OpenAI api key
@@ -107,7 +106,7 @@ class GenerationPipeline:
                 missing_tasks.append(task)
         return missing_tasks
 
-    def augment(self, k: int, train_dir: str, total_qs: int) -> None:
+    def augment(self, k: int, total_qs: int) -> None:
         """
         for all train tasks:
         (0) Sample k examples from task
@@ -119,13 +118,12 @@ class GenerationPipeline:
         (3) add augmented examples into tasks super set
 
         k: amount of in-context examples for generation
-        train_dir: file path to directory containing train data json files
         total_qs: total number of question to generate (including in-context
         examples)
         """
-        train_tasks = os.listdir(train_dir)
+        train_tasks = os.listdir(self.train_dir)
         for i, task in enumerate(train_tasks):
-            D_task = load_dataset("json", data_files=f"{train_dir}/{task}")
+            D_task = load_dataset("json", data_files=f"{self.train_dir}/{task}")
             k_idx = np.random.randint(low=0, high=len(D_task), size=k).tolist()
             # TODO weighted sample based on how many times selected from ds?
             D_subset = D_task.select(k_idx)
