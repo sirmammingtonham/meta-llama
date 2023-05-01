@@ -46,15 +46,13 @@ def create_args() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--k",
-        type=int,
-        help="amount of in-context examples for generation"
-        )
+        "--k", type=int, help="amount of in-context examples for generation"
+    )
 
     parser.add_argument(
         "--total_qs",
         type=int,
-        help="total number of question to generate (including in-context examples)"
-        )
-   
+        help="total number of question to generate (including in-context examples)",
+    )
+
     return parser.parse_args()

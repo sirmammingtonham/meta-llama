@@ -13,7 +13,7 @@ if __name__ == "__main__":
     sk = args.sk
     k = args.k
     total_qs = args.total_qs
-    
+
     gp = GenerationPipeline(
         tasks_dir,
         train_dir,
