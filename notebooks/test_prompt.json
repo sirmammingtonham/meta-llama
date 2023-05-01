@@ -1,5 +1,26 @@
 [
   {
+    "inputs": "Determine whether the given sequence of parentheses is properly matched.\n\nSequence: } [ ] }\nValid/Invalid?",
+    "targets": ["Invalid"],
+    "multiple_choice_targets": ["Valid", "Invalid"],
+    "multiple_choice_scores": [0, 1],
+    "idx": 158
+  },
+  {
+    "inputs": "Determine whether the given sequence of parentheses is properly matched.\n\nSequence: [ ) ( ) } { ) } } (\nValid/Invalid?",
+    "targets": ["Invalid"],
+    "multiple_choice_targets": ["Valid", "Invalid"],
+    "multiple_choice_scores": [0, 1],
+    "idx": 551
+  },
+  {
+    "inputs": "Determine whether the given sequence of parentheses is properly matched.\n\nSequence: { { [ ) } } [ } ( )\nValid/Invalid?",
+    "targets": ["Invalid"],
+    "multiple_choice_targets": ["Valid", "Invalid"],
+    "multiple_choice_scores": [0, 1],
+    "idx": 141
+  },
+  {
     "inputs": "Given a list of integers, find the maximum sum of any contiguous subarray.\n\nList: [1, -2, 3, 4, -5, 8]\nMaximum sum:",
     "targets": ["10"],
     "multiple_choice_targets": ["-2", "3", "10", "12", "13"]

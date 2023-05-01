@@ -1,0 +1,23 @@
+[
+  {
+    "inputs": "Determine whether the given sequence of parentheses is properly matched.\n\nSequence: } [ ] }\nValid/Invalid?",
+    "targets": ["Invalid"],
+    "multiple_choice_targets": ["Valid", "Invalid"],
+    "multiple_choice_scores": [0, 1],
+    "idx": 158
+  },
+  {
+    "inputs": "Determine whether the given sequence of parentheses is properly matched.\n\nSequence: [ ) ( ) } { ) } } (\nValid/Invalid?",
+    "targets": ["Invalid"],
+    "multiple_choice_targets": ["Valid", "Invalid"],
+    "multiple_choice_scores": [0, 1],
+    "idx": 551
+  },
+  {
+    "inputs": "Determine whether the given sequence of parentheses is properly matched.\n\nSequence: { { [ ) } } [ } ( )\nValid/Invalid?",
+    "targets": ["Invalid"],
+    "multiple_choice_targets": ["Valid", "Invalid"],
+    "multiple_choice_scores": [0, 1],
+    "idx": 141
+  }
+]
