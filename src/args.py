@@ -21,6 +21,22 @@ def create_args() -> argparse.ArgumentParser:
         help="Number of in context examples to use",
     )
     parser.add_argument(
+        "--data_method",
+        type=str,
+        default="direct",
+        help="Direct or channel",
+    )
+    parser.add_argument(
+        "--include_choices",
+        action="store_true",
+        help="Whether to explicitly list possible choices in the prompt",
+    )
+    parser.add_argument(
+        "--no_augment",
+        action="store_true",
+        help="Pass this flag to use non-augmented data for training",
+    )
+    parser.add_argument(
         "--per_device_train_batch_size",
         type=int,
         default=128,
@@ -48,12 +64,6 @@ def create_args() -> argparse.ArgumentParser:
         help="Total number of training epochs to perform.",
     )
     parser.add_argument(
-        "--max_train_steps",
-        type=int,
-        default=None,
-        help="Total number of training steps to perform. If provided, overrides num_train_epochs.",
-    )
-    parser.add_argument(
         "--gradient_accumulation_steps",
         type=int,
         default=1,
@@ -71,13 +81,8 @@ def create_args() -> argparse.ArgumentParser:
     parser.add_argument(
         "--preprocessing_num_workers",
         type=int,
-        default=None,
+        default=8,
         help="The number of processes to use for the preprocessing.",
-    )
-    parser.add_argument(
-        "--overwrite_cache",
-        action="store_true",
-        help="Overwrite the cached training and evaluation sets",
     )
     parser.add_argument(
         "--push_to_hub",
@@ -91,12 +96,6 @@ def create_args() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--hub_token", type=str, help="The token to use to push to the Model Hub."
-    )
-    parser.add_argument(
-        "--checkpointing_steps",
-        type=str,
-        default=None,
-        help="Whether the various states should be saved at the end of every n steps, or 'epoch' for each epoch.",
     )
     parser.add_argument(
         "--resume_from_checkpoint",

@@ -1,4 +1,4 @@
-from datasets import Dataset
+from datasets import Dataset, load_dataset
 from dataclasses import dataclass
 from typing import List, Dict, Any
 from transformers import PreTrainedTokenizerBase
@@ -8,8 +8,22 @@ import numpy as np
 import itertools
 
 
-def load_datasets(dataset_names: List[str]) -> Dict[str, Dataset]:
-    pass
+def load_datasets(
+    dataset_names: List[str], use_augmented=False, split="train"
+) -> Dict[str, Dataset]:
+    if use_augmented:
+        return {
+            name: load_dataset(
+                "json",
+                data_files=f"data/{name}/{split}_augmented.json",
+            )
+            for name in dataset_names
+        }
+    else:
+        return {
+            name: load_dataset(f"tasksource/{name}", split=split)
+            for name in dataset_names
+        }
 
 
 def preprocess_dataset(

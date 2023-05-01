@@ -2,7 +2,7 @@ import math
 import evaluate
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from peft import get_peft_model, LoraConfig, TaskType
-from src.data import load_datasets, ICLCollator
+from src.data import load_datasets, preprocess_dataset, ICLCollator
 from src.args import create_args
 from src.model import ICLModel
 from src.config import TRAIN_TASKS, TEST_TASKS
@@ -27,8 +27,22 @@ def train(args):
     model = ICLModel(base_model, k_examples=args.k)
 
     # setup datasets and dataloaders
-    train_datasets = load_datasets(TRAIN_TASKS)
-    val_datasets = load_datasets(TEST_TASKS)
+    preprocess_fn = lambda ds: preprocess_dataset(
+        ds,
+        tokenizer,
+        method=args.data_method,
+        include_choices=args.include_choices,
+        num_procs=args.preprocessing_num_workers,
+    )
+    train_datasets = load_datasets(
+        TRAIN_TASKS,
+        use_augmented=not args.no_augment,
+        split="train",
+        preprocess_fn=preprocess_fn,
+    )
+    val_datasets = load_datasets(
+        TEST_TASKS, use_augmented=False, split="validation", preprocess_fn=preprocess_fn
+    )
 
     collate_fn = ICLCollator(tokenizer, k_examples=args.k)
 
