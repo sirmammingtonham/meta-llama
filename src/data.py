@@ -2,26 +2,30 @@ from datasets import Dataset, load_dataset
 from dataclasses import dataclass
 from typing import List, Dict, Any
 from transformers import PreTrainedTokenizerBase
-from torch.utils.data import DataLoader
+from torch.utils import data
 
 import numpy as np
 import itertools
 
 
 def load_datasets(
-    dataset_names: List[str], use_augmented=False, split="train"
+    dataset_names: List[str],
+    use_augmented=False,
+    preprocess_fn=lambda x: x,
 ) -> Dict[str, Dataset]:
     if use_augmented:
         return {
-            name: load_dataset(
-                "json",
-                data_files=f"data/{name}/{split}_augmented.json",
+            name: preprocess_fn(
+                load_dataset(
+                    "json",
+                    data_files=f"training_data_generated/{name}.json",
+                )
             )
             for name in dataset_names
         }
     else:
         return {
-            name: load_dataset(f"tasksource/{name}", split=split)
+            name: preprocess_fn(load_dataset(f"tasksource/{name}"))
             for name in dataset_names
         }
 
@@ -139,13 +143,43 @@ class ICLCollator:
         return batch
 
 
+class EvalDatasetWrapper(data.Dataset):
+    """
+    Simple Dataset wrapper that returns k_examples-1 random
+    examples from the training set for each evaluation example
+    """
+
+    def __init__(
+        self,
+        train_dataset: data.Dataset,
+        eval_dataset: data.Dataset,
+        k_examples=16,
+    ):
+        self.train_dataset = train_dataset
+        self.eval_dataset = eval_dataset
+        self.k_examples = k_examples
+
+    def __len__(self):
+        return len(self.eval_dataset)
+
+    def __getitem__(self, index):
+        random_examples = np.random.randint(
+            0, len(self.train_dataset), size=(self.k_examples - 1,)
+        )
+        examples = [self.train_dataset[i] for i in random_examples]
+
+        target = self.eval_dataset[index]
+
+        return examples + [target]
+
+
 class MultitaskDataloader:
     """
     Data loader that combines and samples from multiple single-task
     data loaders.
     """
 
-    def __init__(self, dataloader_dict: Dict[str, DataLoader], p=1):
+    def __init__(self, dataloader_dict: Dict[str, data.DataLoader], p=1):
         self.dataloader_dict = dataloader_dict
         N = max([len(x) ** (1 - p) for x in dataloader_dict.values()])
         f_p = lambda x: int(N * x**p)

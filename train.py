@@ -1,12 +1,11 @@
-import math
 import evaluate
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from peft import get_peft_model, LoraConfig, TaskType
-from src.data import load_datasets, preprocess_dataset, ICLCollator
+from src.data import load_datasets, preprocess_dataset
 from src.args import create_args
 from src.model import ICLModel
-from src.config import TRAIN_TASKS, TEST_TASKS
 from src.trainer import ICLTrainer
+from config import TRAIN_TASKS, TEST_TASKS
 
 
 def train(args):
@@ -37,27 +36,26 @@ def train(args):
     train_datasets = load_datasets(
         TRAIN_TASKS,
         use_augmented=not args.no_augment,
-        split="train",
         preprocess_fn=preprocess_fn,
     )
     val_datasets = load_datasets(
-        TEST_TASKS, use_augmented=False, split="validation", preprocess_fn=preprocess_fn
+        TEST_TASKS, use_augmented=False, preprocess_fn=preprocess_fn
     )
 
-    collate_fn = ICLCollator(tokenizer, k_examples=args.k)
-
     training_args = TrainingArguments(
-        output_dir="./models",
-        do_train=True,
-        do_eval=True,
+        output_dir=args.output_dir,
+        num_train_epochs=args.num_train_epochs,
         per_device_train_batch_size=args.per_device_train_batch_size,
         per_device_eval_batch_size=args.per_device_eval_batch_size,
         learning_rate=args.learning_rate,
-        logging_dir="./logs",
-        report_to="wandb",
-        remove_unused_columns=False,
-        save_total_limit=5,
+        weight_decay=args.weight_decay,
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
+        report_to=args.report_to,
         seed=args.seed,
+        logging_dir="./logs",
+        evaluation_strategy="epoch",
+        save_total_limit=5,
+        remove_unused_columns=False,
     )
 
     metric = evaluate.load("accuracy")
@@ -75,30 +73,27 @@ def train(args):
         args=training_args,
         train_dataset=train_datasets,
         eval_dataset=val_datasets,
-        data_collator=collate_fn,
+        tokenizer=tokenizer,
         compute_metrics=compute_metrics,
     )
 
-    train_result = trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
-    trainer.save_model()  # Saves the tokenizer too for easy upload
-    metrics = train_result.metrics
+    if args.train:
+        train_result = trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
+        trainer.save_model()
+        metrics = train_result.metrics
 
-    trainer.log_metrics("train", metrics)
-    trainer.save_metrics("train", metrics)
-    trainer.save_state()
+        trainer.log_metrics("train", metrics)
+        trainer.save_metrics("train", metrics)
+        trainer.save_state()
 
-    metrics = trainer.evaluate()
+    if args.evaluate:
+        metrics = trainer.evaluate()
+        trainer.log_metrics("eval", metrics)
+        trainer.save_metrics("eval", metrics)
 
-    try:
-        perplexity = math.exp(metrics["eval_loss"])
-    except OverflowError:
-        perplexity = float("inf")
-    metrics["perplexity"] = perplexity
-
-    trainer.log_metrics("eval", metrics)
-    trainer.save_metrics("eval", metrics)
-
-    trainer.create_model_card()
+    if args.push_to_hub:
+        trainer.push_to_hub()
+        trainer.create_model_card()
 
     return trainer
 

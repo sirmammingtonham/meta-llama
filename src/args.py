@@ -9,6 +9,16 @@ def create_args() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--train",
+        action="store_true",
+        help="Whether or not to run training",
+    )
+    parser.add_argument(
+        "--evaluate",
+        action="store_true",
+        help="Whether or not to run evaluation",
+    )
+    parser.add_argument(
         "--model_str",
         type=str,
         default="decapoda-research/llama-7b-hf",
@@ -76,7 +86,10 @@ def create_args() -> argparse.ArgumentParser:
         help="Number of steps for the warmup in the lr scheduler.",
     )
     parser.add_argument(
-        "--output_dir", type=str, default=None, help="Where to store the final model."
+        "--output_dir",
+        type=str,
+        default="./output",
+        help="Where to store the final model.",
     )
     parser.add_argument(
         "--preprocessing_num_workers",
@@ -90,28 +103,15 @@ def create_args() -> argparse.ArgumentParser:
         help="Whether or not to push the model to the Hub.",
     )
     parser.add_argument(
-        "--hub_model_id",
-        type=str,
-        help="The name of the repository to keep in sync with the local `output_dir`.",
-    )
-    parser.add_argument(
-        "--hub_token", type=str, help="The token to use to push to the Model Hub."
-    )
-    parser.add_argument(
         "--resume_from_checkpoint",
         type=str,
         default=None,
         help="If the training should continue from a checkpoint folder.",
     )
     parser.add_argument(
-        "--with_tracking",
-        action="store_true",
-        help="Whether to enable experiment trackers for logging.",
-    )
-    parser.add_argument(
         "--report_to",
         type=str,
-        default="all",
+        default="wandb",
         help=(
             'The integration to report the results and logs to. Supported platforms are `"tensorboard"`,'
             ' `"wandb"`, `"comet_ml"` and `"clearml"`. Use `"all"` (default) to report to all integrations.'
