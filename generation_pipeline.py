@@ -10,8 +10,9 @@ from tqdm import tqdm
 from collections import defaultdict
 from rouge_score import rouge_scorer
 from typing import List, Dict, Tuple
-from datasets import load_dataset, Dataset
+from datasets import load_dataset, concatenate_datasets, Dataset
 
+TASK_SELECT_SEED = 10
 np.random.seed(0)
 
 EXCLUDED_TASKS = ["cifar10_classification", "mnist_ascii"]
@@ -123,11 +124,25 @@ class GenerationPipeline:
         """
         train_tasks = os.listdir(self.train_dir)
         for i, task in enumerate(train_tasks):
-            D_task = load_dataset("json", data_files=f"{self.train_dir}/{task}")
-            k_idx = np.random.randint(low=0, high=len(D_task), size=k).tolist()
-            # TODO weighted sample based on how many times selected from ds?
-            D_subset = D_task.select(k_idx)
-            prompt = self.to_prompt(D_subset, total_qs, task)
+            D_task = load_dataset("json", data_files=f"{self.train_dir}/{task}.json")
+            D_task_aug = load_dataset(
+                "json", data_files=f"{self.train_dir_gen}/{task}.json"
+            )
+            # sample indeces for selection, treat len(D_task) as offset
+            k_idx = np.random.randint(
+                low=0, high=len(D_task) + len(D_task_aug), size=k
+            ).tolist()
+            k_idx_real = list(filter(lambda x: x < len(D_task), k_idx))
+            k_idx_aug = list(
+                np.array(list(filter(lambda x: x >= len(D_task), k_idx))) - len(D_task)
+            )
+            # select examples from both real and augmented task dataset
+            D_subset = D_task.select(k_idx_real)
+            D_subset_aug = D_task_aug.select(k_idx_aug)
+            D_examples = concatenate_datasets([D_subset, D_subset_aug], axis=0)
+            D_examples = D_examples.shuffle(seed=TASK_SELECT_SEED)
+            # construct prompt
+            prompt = self.to_prompt(D_examples, total_qs, task)
             # make request
             msg_content = self.make_request(prompt)
             # process request
