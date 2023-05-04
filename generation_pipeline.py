@@ -64,18 +64,20 @@ class GenerationPipeline:
 
         # # initialize seed task jsons in training directory
         self.missing_tasks = self._init_task_seeds(task_seed_size, train_dir)
-        self.train_tasks = filter(
-            lambda x: x not in self.missing_tasks, self.train_tasks
+        self.train_tasks = list(
+            filter(lambda x: x not in self.missing_tasks, self.train_tasks)
         )
 
         # initialize error recording directory
         if not os.path.exists(self.error_dir):
             os.makedirs(self.error_dir)
 
-        # initialize json files to dump generated examples into
+        # initialize json files directory to dump generated examples into
         if not os.path.exists(self.train_dir_gen):
             os.makedirs(self.train_dir_gen)
-            for task in self.train_tasks:
+        # initalize empty jsons to dump generated examples into
+        for task in self.train_tasks:
+            if not os.path.exists(f"{self.train_dir_gen}/{task}.json"):
                 with open(f"{self.train_dir_gen}/{task}.json", "w") as f:
                     json.dump([], f)
                 f.close()
@@ -110,7 +112,7 @@ class GenerationPipeline:
                 missing_tasks.append(task)
         return missing_tasks
 
-    def augment(self, k: int, total_qs: int, SKIP_TASKS:List[str]) -> None:
+    def augment(self, k: int, total_qs: int, SKIP_TASKS: List[str]) -> None:
         """
         for all train tasks:
         (0) Sample k examples from task
