@@ -206,7 +206,13 @@ class GenerationPipeline:
         try:
             completion = openai.ChatCompletion.create(
                 model=model,
-                messages=[{"role": "system", "content": prompt}],  # change role??
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a large language model that excels at generating well structured and diverse examples for tasks in a dataset.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
                 temperature=0,
             )
             msg_content = completion["choices"][0]["message"]["content"]
