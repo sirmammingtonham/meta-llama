@@ -4,6 +4,7 @@ import ast
 import os
 import openai
 import re
+import time
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -11,7 +12,6 @@ from collections import defaultdict
 from rouge_score import rouge_scorer
 from typing import List, Dict, Tuple
 from datasets import load_dataset, concatenate_datasets, Dataset
-import time
 
 
 EXCLUDED_TASKS = ["cifar10_classification", "mnist_ascii"]
@@ -112,7 +112,13 @@ class GenerationPipeline:
                 missing_tasks.append(task)
         return missing_tasks
 
-    def augment(self, k: int, total_qs: int, SKIP_TASKS: List[str]) -> None:
+    def augment(
+        self,
+        k: int,
+        total_qs: int,
+        SKIP_TASKS: List[str] = [],
+        TARG_TASKS: List[str] = [],
+    ) -> None:
         """
         for all train tasks:
         (0) Sample k examples from task
@@ -125,17 +131,22 @@ class GenerationPipeline:
 
         k: amount of in-context examples for generation
         total_qs: total number of question to generate (including in-context
-        SKIP_TASKS: tasks to skip
+        SKIP_TASKS: if defined, skip these tasks
+        TARG_TASKS: if defined, only augment these tasks
         examples)
         """
         train_tasks = os.listdir(self.train_dir)
         for i, task in enumerate(train_tasks):
-            if task in SKIP_TASKS:
+            if SKIP_TASKS and task in SKIP_TASKS:
                 print(f"skipping task: {task}")
+                continue
+            if TARG_TASKS and task not in TARG_TASKS:
+                print(f"skipping task (not in target):{task}")
                 continue
 
             task = task[:-5]  # get rid of .json
-            print(task)
+            print(f"Generating examples for {task}")
+            print("-" * 50)
             D_task = load_dataset(
                 "json", data_files=f"{self.train_dir}/{task}.json", split="train"
             )
@@ -165,6 +176,7 @@ class GenerationPipeline:
             # make request
             msg_content = self.make_request(prompt)
             print(msg_content)
+            print("-" * 50)
             # process request
             filter_summary = self.process_request(msg_content, task)
             # record error summary
@@ -177,7 +189,7 @@ class GenerationPipeline:
                         "task",
                         "parse_filters",
                         "field_check_filters",
-                        # "rougel_filters",
+                        "rougel_filters",
                     ],
                 )
                 if i == 0:
@@ -203,7 +215,8 @@ class GenerationPipeline:
                 example[key] = ds_dict[key][i]
             examples.append(example)
 
-        prompt = """Generate a series of 10 diverse questions related to TASK DESCRIPTION in a JSON format with the following schema:
+        prompt = f"Generate a series of {total_qs} diverse questions related to TASK DESCRIPTION in a JSON format with the following schema:"
+        prompt += """
 ```
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
@@ -276,13 +289,13 @@ class GenerationPipeline:
         task: name of task generated questions correspond to
         """
         questions_parsed, parsed_errs = self._generation_to_dicts(msg_content)
-        added_questions, fc_errs = self._field_check(questions_parsed)
-        # added_questions, rl_errs = self._rougel_check(task, questions_fc_pass)
+        questions_fc_pass, fc_errs = self._field_check(questions_parsed)
+        added_questions, rl_errs = self._rougel_check(task, questions_fc_pass)
 
         filter_summary = {
             "parse_filters": parsed_errs,
             "field_check_filters": fc_errs,
-            # "rougel_filters": rl_errs,
+            "rougel_filters": rl_errs,
         }
 
         with open(f"{self.train_dir_gen}/{task}.json", "r") as f:
@@ -342,7 +355,7 @@ class GenerationPipeline:
 
     def _rougel_check(self, task: str, questions: List[Dict]) -> Tuple[List[Dict], int]:
         """
-        assumes questions pass _field_check
+        duplicate check, assumes questions pass _field_check
         task: task name
         questions: generated question list in dict format (e.g.,
         {inputs:<str>, targets:<str>, multiple_choice_targets:<str>})
@@ -368,7 +381,7 @@ class GenerationPipeline:
             for j, new_q in enumerate(generated_inputs):
                 score = scorer.score(new_q, existing_q)["rougeL"].fmeasure
                 scores[j].append((i, score))
-                if score > 0.7:
+                if score > 0.99:
                     self.dump_error(existing_q, self.error_file)
                     excluded_qs.add(j)
                     errs += 1
