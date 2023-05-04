@@ -13,8 +13,6 @@ from typing import List, Dict, Tuple
 from datasets import load_dataset, concatenate_datasets, Dataset
 import time
 
-TASK_SELECT_SEED = 10
-np.random.seed(0)
 
 EXCLUDED_TASKS = ["cifar10_classification", "mnist_ascii"]
 
@@ -28,6 +26,7 @@ class GenerationPipeline:
         error_dir: str,
         task_seed_size: int,
         sk: str,
+        SKIP_TASKS: str,
         filter_errors: str = "filter_errors.csv",
         error_file: str = "errors.txt",
     ) -> None:
@@ -46,6 +45,7 @@ class GenerationPipeline:
         self.error_dir = error_dir
         self.filter_errors = filter_errors
         self.error_file = error_file
+        self.SKIP_TASKS = SKIP_TASKS
 
         with open(tasks_dir, newline="") as f:
             reader = csv.reader(f)
@@ -70,18 +70,17 @@ class GenerationPipeline:
             lambda x: x not in self.missing_tasks, self.train_tasks
         )
 
-        # initialize json files to dump generated examples into
-        if not os.path.exists(self.train_dir_gen):
-            os.makedirs(self.train_dir_gen)
-
         # initialize error recording directory
         if not os.path.exists(self.error_dir):
             os.makedirs(self.error_dir)
 
-        for task in self.train_tasks:
-            with open(f"{self.train_dir_gen}/{task}.json", "w") as f:
-                json.dump([], f)
-            f.close()
+        # initialize json files to dump generated examples into
+        if not os.path.exists(self.train_dir_gen):
+            os.makedirs(self.train_dir_gen)
+            for task in self.train_tasks:
+                with open(f"{self.train_dir_gen}/{task}.json", "w") as f:
+                    json.dump([], f)
+                f.close()
 
         self.descr_df = pd.read_csv("./bigbench_metadata/task_descriptions.csv")
 
@@ -130,13 +129,23 @@ class GenerationPipeline:
         """
         train_tasks = os.listdir(self.train_dir)
         for i, task in enumerate(train_tasks):
+            if task in self.SKIP_TASKS:
+                print(f"skipping task: {task}")
+                continue
+
             task = task[:-5]  # get rid of .json
+            print(task)
             D_task = load_dataset(
                 "json", data_files=f"{self.train_dir}/{task}.json", split="train"
             )
             D_task_aug = load_dataset(
                 "json", data_files=f"{self.train_dir_gen}/{task}.json", split="train"
             )
+
+            if len(D_task_aug) > 50:
+                print(f"Reach augmented capacity: {task}")
+                continue
+
             # sample indeces for selection, treat len(D_task) as offset
             k_idx = np.random.randint(
                 low=0, high=len(D_task) + len(D_task_aug), size=k
@@ -149,11 +158,12 @@ class GenerationPipeline:
             D_subset = D_task.select(k_idx_real)
             D_subset_aug = D_task_aug.select(k_idx_aug)
             D_examples = concatenate_datasets([D_subset, D_subset_aug], axis=0)
-            D_examples = D_examples.shuffle(seed=TASK_SELECT_SEED)
+            D_examples = D_examples.shuffle()
             # construct prompt
             prompt = self.to_prompt(D_examples, total_qs, task)
             # make request
             msg_content = self.make_request(prompt)
+            print(msg_content)
             # process request
             filter_summary = self.process_request(msg_content, task)
             # record error summary
@@ -297,6 +307,7 @@ class GenerationPipeline:
             if i == 0:  # end of prompt = "... Question i:"
                 try:
                     msg_dict = ast.literal_eval(q)
+                    generated_dict_examples.append(msg_dict)
                 except:
                     print(f"unable to convert to dict: {q}")
                     self.dump_error(q, self.error_file)
@@ -306,11 +317,11 @@ class GenerationPipeline:
                 q = q.rstrip("\n")
                 try:
                     msg_dict = ast.literal_eval(q)
+                    generated_dict_examples.append(msg_dict)
                 except:
                     print(f"unable to convert to dict: {q}")
                     self.dump_error(q, self.error_file)
                     errs += 1
-            generated_dict_examples.append(msg_dict)
 
         return generated_dict_examples, errs
 
