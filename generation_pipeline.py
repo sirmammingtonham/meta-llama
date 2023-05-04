@@ -28,6 +28,7 @@ class GenerationPipeline:
         task_seed_size: int,
         sk: str,
         filter_errors: str = "filter_errors.csv",
+        error_file:str = "errors.txt"
     ) -> None:
         """
         tasks_dir: name of file (csv) of tasks to augment
@@ -43,6 +44,7 @@ class GenerationPipeline:
         self.train_dir_gen = train_dir_gen
         self.error_dir = error_dir
         self.filter_errors = filter_errors
+        self.error_file = error_file
 
         with open(tasks_dir, newline="") as f:
             reader = csv.reader(f)
@@ -258,6 +260,7 @@ class GenerationPipeline:
                     msg_dict = ast.literal_eval(q)
                 except:
                     print(f"unable to convert to dict: {q}")
+                    self.dump_error(q, self.error_file)
                     errs += 1
             else:  # cut off Question:\n that comes before the {<json_question>}
                 q = q[q.find("\n") :]
@@ -266,6 +269,7 @@ class GenerationPipeline:
                     msg_dict = ast.literal_eval(q)
                 except:
                     print(f"unable to convert to dict: {q}")
+                    self.dump_error(q, self.error_file)
                     errs += 1
             generated_dict_examples.append(msg_dict)
 
@@ -281,6 +285,7 @@ class GenerationPipeline:
             if len(keys.difference(set(q.keys()))) == 0:
                 out.append(q)
             else:
+                self.dump_error(q, self.error_file)
                 errs += 1
         return out, errs
 
@@ -313,7 +318,12 @@ class GenerationPipeline:
                 score = scorer.score(new_q, existing_q)["rougeL"].fmeasure
                 scores[j].append((i, score))
                 if score > 0.7:
+                    self.dump_error(existing_q, self.error_file)
                     excluded_qs.add(j)
                     errs += 1
 
         return [q for i, q in enumerate(questions) if i not in excluded_qs], errs
+
+    def dump_error(self, res:str, error_file:str):
+        with open(error_file, "a") as f:
+            f.write(f"{res}\n")
