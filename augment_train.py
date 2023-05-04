@@ -11,7 +11,6 @@ if __name__ == "__main__":
         "errors",
         50,
         sk,
-        ETHAN_TASKS,
     )
     k, total_qs = 4, 10
-    gp.augment(k, total_qs)
+    gp.augment(k, total_qs, ETHAN_TASKS)

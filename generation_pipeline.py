@@ -26,7 +26,6 @@ class GenerationPipeline:
         error_dir: str,
         task_seed_size: int,
         sk: str,
-        SKIP_TASKS: str,
         filter_errors: str = "filter_errors.csv",
         error_file: str = "errors.txt",
     ) -> None:
@@ -45,7 +44,6 @@ class GenerationPipeline:
         self.error_dir = error_dir
         self.filter_errors = filter_errors
         self.error_file = error_file
-        self.SKIP_TASKS = SKIP_TASKS
 
         with open(tasks_dir, newline="") as f:
             reader = csv.reader(f)
@@ -112,7 +110,7 @@ class GenerationPipeline:
                 missing_tasks.append(task)
         return missing_tasks
 
-    def augment(self, k: int, total_qs: int) -> None:
+    def augment(self, k: int, total_qs: int, SKIP_TASKS:List[str]) -> None:
         """
         for all train tasks:
         (0) Sample k examples from task
@@ -125,11 +123,12 @@ class GenerationPipeline:
 
         k: amount of in-context examples for generation
         total_qs: total number of question to generate (including in-context
+        SKIP_TASKS: tasks to skip
         examples)
         """
         train_tasks = os.listdir(self.train_dir)
         for i, task in enumerate(train_tasks):
-            if task in self.SKIP_TASKS:
+            if task in SKIP_TASKS:
                 print(f"skipping task: {task}")
                 continue
 
