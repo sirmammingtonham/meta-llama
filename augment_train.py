@@ -20,8 +20,8 @@ if __name__ == "__main__":
         train_dir_gen,
         error_dir,
         task_seed_size,
-        filter_errors,
         sk,
+        filter_errors,
     )
 
     gp.augment(k, total_qs)

@@ -11,6 +11,7 @@ from collections import defaultdict
 from rouge_score import rouge_scorer
 from typing import List, Dict, Tuple
 from datasets import load_dataset, concatenate_datasets, Dataset
+import time
 
 TASK_SELECT_SEED = 10
 np.random.seed(0)
@@ -28,7 +29,7 @@ class GenerationPipeline:
         task_seed_size: int,
         sk: str,
         filter_errors: str = "filter_errors.csv",
-        error_file:str = "errors.txt"
+        error_file: str = "errors.txt",
     ) -> None:
         """
         tasks_dir: name of file (csv) of tasks to augment
@@ -59,6 +60,9 @@ class GenerationPipeline:
         train_idx, test_idx = idx[:split], idx[split:]
         self.train_tasks = [tasks[i] for i in train_idx]
         self.test_tasks = [tasks[i] for i in test_idx]
+
+        if not os.path.exists(self.train_dir):
+            os.makedirs(self.train_dir)
 
         # # initialize seed task jsons in training directory
         self.missing_tasks = self._init_task_seeds(task_seed_size, train_dir)
@@ -126,9 +130,12 @@ class GenerationPipeline:
         """
         train_tasks = os.listdir(self.train_dir)
         for i, task in enumerate(train_tasks):
-            D_task = load_dataset("json", data_files=f"{self.train_dir}/{task}.json")
+            task = task[:-5]  # get rid of .json
+            D_task = load_dataset(
+                "json", data_files=f"{self.train_dir}/{task}.json", split="train"
+            )
             D_task_aug = load_dataset(
-                "json", data_files=f"{self.train_dir_gen}/{task}.json"
+                "json", data_files=f"{self.train_dir_gen}/{task}.json", split="train"
             )
             # sample indeces for selection, treat len(D_task) as offset
             k_idx = np.random.randint(
@@ -159,7 +166,7 @@ class GenerationPipeline:
                         "task",
                         "parse_filters",
                         "field_check_filters",
-                        "rougel_filters",
+                        # "rougel_filters",
                     ],
                 )
                 if i == 0:
@@ -185,8 +192,34 @@ class GenerationPipeline:
                 example[key] = ds_dict[key][i]
             examples.append(example)
 
-        prompt = f"Generate a series of {total_qs} questions in a valid JSON format:"
-        task_descr = self.descr_df[(self.desc_df == task)].values[0]
+        prompt = """Generate a series of 10 diverse questions related to TASK DESCRIPTION in a JSON format with the following schema:
+```
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "inputs": {
+      "type": "string"
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "multiple_choice_targets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": ["inputs", "targets", "multiple_choice_targets"]
+}
+```"""
+        task_descr = self.descr_df[(self.descr_df["task"] == task)][
+            "description"
+        ].values[0]
         prompt += f"\nTASK DESCRIPTION: {task_descr}"
 
         for i, e in enumerate(examples):
@@ -195,7 +228,7 @@ class GenerationPipeline:
 
         return prompt
 
-    def make_request(self, prompt: str, model: str = "gpt-4") -> str:
+    def make_request(self, prompt: str, model: str = "gpt-3.5-turbo") -> str:
         """
         Assumes only sending one prompt (e.g., not sending list of prompts)
 
@@ -204,17 +237,17 @@ class GenerationPipeline:
         """
         msg_content = ""
         try:
+            start = time.time()
             completion = openai.ChatCompletion.create(
                 model=model,
                 messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a large language model that excels at generating well structured and diverse examples for tasks in a dataset.",
-                    },
-                    {"role": "user", "content": prompt},
+                    {"role": "system", "content": prompt},
                 ],
                 temperature=0,
+                presence_penalty=1,
             )
+            end = time.time()
+            print("REQUEST TIME:", end - start)
             msg_content = completion["choices"][0]["message"]["content"]
         except openai.error.OpenAIError as e:
             print(f"OpenAIError: {e}.")
@@ -232,13 +265,13 @@ class GenerationPipeline:
         task: name of task generated questions correspond to
         """
         questions_parsed, parsed_errs = self._generation_to_dicts(msg_content)
-        questions_fc_pass, fc_errs = self._field_check(questions_parsed)
-        added_questions, rl_errs = self._rougel_check(questions_fc_pass)
+        added_questions, fc_errs = self._field_check(questions_parsed)
+        # added_questions, rl_errs = self._rougel_check(task, questions_fc_pass)
 
         filter_summary = {
             "parse_filters": parsed_errs,
             "field_check_filters": fc_errs,
-            "rougel_filters": rl_errs,
+            # "rougel_filters": rl_errs,
         }
 
         with open(f"{self.train_dir_gen}/{task}.json", "r") as f:
@@ -303,7 +336,7 @@ class GenerationPipeline:
         {inputs:<str>, targets:<str>, multiple_choice_targets:<str>})
         """
         # get current examples in db
-        with open(f"{self.train}/{task}.json", "r") as f:
+        with open(f"{self.train_dir}/{task}.json", "r") as f:
             ds_init = json.load(f)
         f.close()
         with open(f"{self.train_dir_gen}/{task}.json", "r") as f:
@@ -330,6 +363,6 @@ class GenerationPipeline:
 
         return [q for i, q in enumerate(questions) if i not in excluded_qs], errs
 
-    def dump_error(self, res:str, error_file:str):
-        with open(error_file, "a") as f:
+    def dump_error(self, res: str, error_file: str):
+        with open(f"{self.error_dir}/{error_file}", "a") as f:
             f.write(f"{res}\n")
