@@ -1,6 +1,6 @@
 # added ignores
 ignore*
-errors/
+errors*/
 private.py
 .DS_Store
 
