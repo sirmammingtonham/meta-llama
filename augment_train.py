@@ -7,10 +7,10 @@ if __name__ == "__main__":
     gp = GenerationPipeline(
         "bigbench_metadata/mc_tasks.csv",
         "training_data",
-        "training_data_generated",
-        "errors",
+        "training_data_generated_v2",
+        "errors_v2",
         50,
         sk,
     )
     k, total_qs = 4, 10
-    gp.augment(k, total_qs, TARG_TASKS=SUNIL_TASKS)
+    gp.augment(k, total_qs, SKIP_TASKS= ['kanji_ascii','parsinlu_qa'],TARG_TASKS=SUNIL_TASKS)
