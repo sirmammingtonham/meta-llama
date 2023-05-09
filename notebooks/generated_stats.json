@@ -1,0 +1,278 @@
+{
+  "kanji_ascii.json": {
+    "avg_rouge": 0.46241199770809127,
+    "avg_rouge_self": 0.37796599285892596,
+    "avg_len": 278.24,
+    "avg_len_aug": 315.6
+  },
+  "known_unknowns.json": {
+    "avg_rouge": 0.3639358248674737,
+    "avg_rouge_self": 0.47828546536644295,
+    "avg_len": 102.06,
+    "avg_len_aug": 99.20454545454545
+  },
+  "logic_grid_puzzle.json": {
+    "avg_rouge": 0.4088896379472601,
+    "avg_rouge_self": 0.518364255780056,
+    "avg_len": 1543.2,
+    "avg_len_aug": 1110.3191489361702
+  },
+  "logical_args.json": {
+    "avg_rouge": 0.24279109716467664,
+    "avg_rouge_self": 0.43557648860525927,
+    "avg_len": 859.66,
+    "avg_len_aug": 740.9791666666666
+  },
+  "logical_deduction.json": {
+    "avg_rouge": 0.47715326221313453,
+    "avg_rouge_self": 0.5084851761177126,
+    "avg_len": 414.26,
+    "avg_len_aug": 422.609756097561
+  },
+  "logical_fallacy_detection.json": {
+    "avg_rouge": 0.45711336533623925,
+    "avg_rouge_self": 0.5261453392050055,
+    "avg_len": 203.28,
+    "avg_len_aug": 178.13793103448276
+  },
+  "misconceptions.json": {
+    "avg_rouge": 0.6309821347338199,
+    "avg_rouge_self": 0.7001806597489099,
+    "avg_len": 163.22,
+    "avg_len_aug": 134.92592592592592
+  },
+  "misconceptions_russian.json": {
+    "avg_rouge": 0.0,
+    "avg_rouge_self": 0.0,
+    "avg_len": 0.0,
+    "avg_len_aug": 0.0
+  },
+  "moral_permissibility.json": {
+    "avg_rouge": 0.49212488758827155,
+    "avg_rouge_self": 0.477516091980094,
+    "avg_len": 454.46,
+    "avg_len_aug": 322.5348837209302
+  },
+  "navigate.json": {
+    "avg_rouge": 0.6628444352991165,
+    "avg_rouge_self": 0.7884228736110985,
+    "avg_len": 182.36,
+    "avg_len_aug": 216.40425531914894
+  },
+  "nonsense_words_grammar.json": {
+    "avg_rouge": 0.4712400283272637,
+    "avg_rouge_self": 0.5370999766165485,
+    "avg_len": 119.74,
+    "avg_len_aug": 102.19047619047619
+  },
+  "novel_concepts.json": {
+    "avg_rouge": 0.918082246395888,
+    "avg_rouge_self": 0.931725818402673,
+    "avg_len": 268.94,
+    "avg_len_aug": 260.0
+  },
+  "odd_one_out.json": {
+    "avg_rouge": 0.6027534055974768,
+    "avg_rouge_self": 0.6364109892007679,
+    "avg_len": 63.96,
+    "avg_len_aug": 58.72727272727273
+  },
+  "parsinlu_qa.json": {
+    "avg_rouge": 0.9650467179878944,
+    "avg_rouge_self": 1.0,
+    "avg_len": 195.32,
+    "avg_len_aug": 119.16666666666667
+  },
+  "penguins_in_a_table.json": {
+    "avg_rouge": 0.8318958869352224,
+    "avg_rouge_self": 0.8869402449665171,
+    "avg_len": 441.04,
+    "avg_len_aug": 396.9032258064516
+  },
+  "periodic_elements.json": {
+    "avg_rouge": 0.5039334271587365,
+    "avg_rouge_self": 0.6497569862915601,
+    "avg_len": 66.72,
+    "avg_len_aug": 73.23684210526316
+  },
+  "persian_idioms.json": {
+    "avg_rouge": 0.7249513403890556,
+    "avg_rouge_self": 0.7304107618244317,
+    "avg_len": 239.26,
+    "avg_len_aug": 254.02272727272728
+  },
+  "phrase_relatedness.json": {
+    "avg_rouge": 0.7054816592435432,
+    "avg_rouge_self": 0.7062337710049986,
+    "avg_len": 190.32,
+    "avg_len_aug": 199.78048780487805
+  },
+  "physics.json": {
+    "avg_rouge": 0.49259722749981943,
+    "avg_rouge_self": 0.5924256145980503,
+    "avg_len": 390.98,
+    "avg_len_aug": 377.65909090909093
+  },
+  "play_dialog_same_or_different.json": {
+    "avg_rouge": 0.40488156318311136,
+    "avg_rouge_self": 0.42506257000116104,
+    "avg_len": 901.94,
+    "avg_len_aug": 910.5192307692307
+  },
+  "presuppositions_as_nli.json": {
+    "avg_rouge": 0.6389601692384168,
+    "avg_rouge_self": 0.7689584680617755,
+    "avg_len": 560.66,
+    "avg_len_aug": 410.531914893617
+  },
+  "question_selection.json": {
+    "avg_rouge": 0.3365078408342655,
+    "avg_rouge_self": 0.4082724280864031,
+    "avg_len": 1381.56,
+    "avg_len_aug": 953.0
+  },
+  "real_or_fake_text.json": {
+    "avg_rouge": 0.3015190625743433,
+    "avg_rouge_self": 0.39504939827600655,
+    "avg_len": 2351.86,
+    "avg_len_aug": 1493.0
+  },
+  "reasoning_about_colored_objects.json": {
+    "avg_rouge": 0.4126260240715129,
+    "avg_rouge_self": 0.5257748902275992,
+    "avg_len": 197.74,
+    "avg_len_aug": 192.11904761904762
+  },
+  "rhyming.json": {
+    "avg_rouge": 0.34372708257803464,
+    "avg_rouge_self": 0.38988585961745215,
+    "avg_len": 160.32,
+    "avg_len_aug": 110.60377358490567
+  },
+  "riddle_sense.json": {
+    "avg_rouge": 0.2944463992495417,
+    "avg_rouge_self": 0.44716217846005424,
+    "avg_len": 219.9,
+    "avg_len_aug": 181.28205128205127
+  },
+  "ruin_names.json": {
+    "avg_rouge": 0.6437706460886862,
+    "avg_rouge_self": 0.7321263638348094,
+    "avg_len": 198.56,
+    "avg_len_aug": 191.96226415094338
+  },
+  "salient_translation_error_detection.json": {
+    "avg_rouge": 0.8224941331178123,
+    "avg_rouge_self": 0.8459411480721036,
+    "avg_len": 958.64,
+    "avg_len_aug": 919.1521739130435
+  },
+  "similarities_abstraction.json": {
+    "avg_rouge": 0.8901277826233827,
+    "avg_rouge_self": 0.9255941053042503,
+    "avg_len": 126.7,
+    "avg_len_aug": 118.66666666666667
+  },
+  "simple_ethical_questions.json": {
+    "avg_rouge": 0.3160611146530648,
+    "avg_rouge_self": 0.42745420492132136,
+    "avg_len": 431.2,
+    "avg_len_aug": 370.85714285714283
+  },
+  "snarks.json": {
+    "avg_rouge": 0.277669892523981,
+    "avg_rouge_self": 0.36617245132294035,
+    "avg_len": 207.26,
+    "avg_len_aug": 171.38888888888889
+  },
+  "social_iqa.json": {
+    "avg_rouge": 0.21952044288322822,
+    "avg_rouge_self": 0.3080588932189593,
+    "avg_len": 198.82,
+    "avg_len_aug": 180.20754716981133
+  },
+  "social_support.json": {
+    "avg_rouge": 0.4876266101249868,
+    "avg_rouge_self": 0.6213407455486427,
+    "avg_len": 330.86,
+    "avg_len_aug": 203.73333333333332
+  },
+  "sports_understanding.json": {
+    "avg_rouge": 0.6590269225725088,
+    "avg_rouge_self": 0.6719993113963929,
+    "avg_len": 161.08,
+    "avg_len_aug": 172.46341463414635
+  },
+  "strange_stories.json": {
+    "avg_rouge": 0.17042764940788213,
+    "avg_rouge_self": 0.256130187642795,
+    "avg_len": 590.12,
+    "avg_len_aug": 412.3095238095238
+  },
+  "strategyqa.json": {
+    "avg_rouge": 0.23975251429373015,
+    "avg_rouge_self": 0.335234329267519,
+    "avg_len": 61.9,
+    "avg_len_aug": 52.35897435897436
+  },
+  "suicide_risk.json": {
+    "avg_rouge": 0.1831227374217834,
+    "avg_rouge_self": 0.2775947135469266,
+    "avg_len": 981.9,
+    "avg_len_aug": 246.5
+  },
+  "swahili_english_proverbs.json": {
+    "avg_rouge": 0.5020493153225856,
+    "avg_rouge_self": 0.5457642257480617,
+    "avg_len": 365.7,
+    "avg_len_aug": 361.0
+  },
+  "symbol_interpretation.json": {
+    "avg_rouge": 0.6593318242856644,
+    "avg_rouge_self": 0.7342622779253525,
+    "avg_len": 746.24,
+    "avg_len_aug": 822.5862068965517
+  },
+  "temporal_sequences.json": {
+    "avg_rouge": 0.5593647460713702,
+    "avg_rouge_self": 0.5847280031150546,
+    "avg_len": 586.98,
+    "avg_len_aug": 554.074074074074
+  },
+  "timedial.json": {
+    "avg_rouge": 0.22504356047152005,
+    "avg_rouge_self": 0.3479753666061535,
+    "avg_len": 1003.42,
+    "avg_len_aug": 492.625
+  },
+  "tracking_shuffled_objects.json": {
+    "avg_rouge": 0.4002279303372421,
+    "avg_rouge_self": 0.43032318192409136,
+    "avg_len": 588.36,
+    "avg_len_aug": 521.2083333333334
+  },
+  "understanding_fables.json": {
+    "avg_rouge": 0.19841716249486527,
+    "avg_rouge_self": 0.24271790896728165,
+    "avg_len": 911.14,
+    "avg_len_aug": 846.75
+  },
+  "unit_conversion.json": {
+    "avg_rouge": 0.1113031812529372,
+    "avg_rouge_self": 0.16492333083310814,
+    "avg_len": 63.72,
+    "avg_len_aug": 54.81818181818182
+  },
+  "vitaminc_fact_verification.json": {
+    "avg_rouge": 0.5826740297509951,
+    "avg_rouge_self": 0.6105362460312591,
+    "avg_len": 510.92,
+    "avg_len_aug": 510.675
+  },
+  "what_is_the_tao.json": {
+    "avg_rouge": 0.24114641894864264,
+    "avg_rouge_self": 0.27568828596252765,
+    "avg_len": 308.62,
+    "avg_len_aug": 252.77777777777777
+  }
+}
