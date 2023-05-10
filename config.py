@@ -254,6 +254,8 @@ SUNIL_TASKS = [
     "which_wiki_edit",
 ]
 
+IGNORED_TASKS = ['kanji_ascii','parsinlu_qa']
+
 JSON_SCHEMA = """
 ```
 {
