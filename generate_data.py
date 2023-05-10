@@ -1,6 +1,6 @@
-from generation_args import create_args
+from generation.generation_args import create_args
 from private import sk
-from generation_pipeline import GenerationPipeline
+from generation.generation_pipeline import GenerationPipeline
 from config import SUNIL_TASKS
 
 if __name__ == "__main__":
