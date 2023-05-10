@@ -11,10 +11,12 @@ from tqdm import tqdm
 from collections import defaultdict
 from rouge_score import rouge_scorer
 from typing import List, Dict, Tuple
-from datasets import load_dataset, concatenate_datasets, Dataset
+from datasets import logging, load_dataset, concatenate_datasets, Dataset
 from config import JSON_SCHEMA
 
 EXCLUDED_TASKS = ["cifar10_classification", "mnist_ascii"]
+logging.set_verbosity_warning()
+logging.disable_progress_bar()  # hide the progress bars everytime we load a dataset
 
 
 class GenerationPipeline:
@@ -28,8 +30,8 @@ class GenerationPipeline:
         sk: str,
         filter_errors: str = "filter_errors.csv",
         error_file: str = "errors.txt",
-        epochs:int=40,
-        max_generations:int=200
+        epochs: int = 40,
+        max_generations: int = 200,
     ) -> None:
         """
         tasks_dir: name of file (csv) of tasks to augment
@@ -157,7 +159,7 @@ class GenerationPipeline:
                     print(f"skipping task: {task}")
                     continue
                 if TARG_TASKS and task not in TARG_TASKS:
-                    print(f"skipping task (not in target):{task}")
+                    print(f"skipping task (not in target): {task}")
                     continue
 
                 print(f"Generating examples for {task}")
@@ -165,7 +167,9 @@ class GenerationPipeline:
                     "json", data_files=f"{self.train_dir}/{task}.json", split="train"
                 )
                 D_task_aug = load_dataset(
-                    "json", data_files=f"{self.train_dir_gen}/{task}.json", split="train"
+                    "json",
+                    data_files=f"{self.train_dir_gen}/{task}.json",
+                    split="train",
                 )
                 if len(D_task_aug) > self.MAX_GENERATIONS:
                     print(f"Reached augmented capacity: {task}")
@@ -177,11 +181,14 @@ class GenerationPipeline:
                 ).tolist()
                 k_idx_real = list(filter(lambda x: x < len(D_task), k_idx))
                 k_idx_aug = list(
-                    np.array(list(filter(lambda x: x >= len(D_task), k_idx))) - len(D_task)
+                    np.array(list(filter(lambda x: x >= len(D_task), k_idx)))
+                    - len(D_task)
                 )
                 # select examples from both real and augmented task dataset
                 D_subset = D_task.select(k_idx_real)
-                D_subset = D_subset.remove_columns(["multiple_choice_scores","idx","is_generated","true_idx"])
+                D_subset = D_subset.remove_columns(
+                    ["multiple_choice_scores", "idx", "is_generated", "true_idx"]
+                )
                 D_subset_aug = D_task_aug.select(k_idx_aug)
                 if len(D_subset_aug) > 0:
                     D_subset_aug = D_subset_aug.cast(D_subset.features)
@@ -203,7 +210,7 @@ class GenerationPipeline:
         total_errors = sum(filter_summary.values())
         with open(f"{self.error_dir}/{self.filter_errors}", "a+") as f:
             # task, parse filter, rl filter, fc filter <-- columns
-            
+
             filter_summary["task"] = task
             dict_writer = csv.DictWriter(
                 f,
@@ -220,7 +227,7 @@ class GenerationPipeline:
             iter_summary = {
                 "iter": i,
                 "task": task,
-                "generations": 6 - total_errors, # 10 <- total_qs
+                "generations": 6 - total_errors,  # 10 <- total_qs
                 "generation_time": gen_time,
             }
             dict_writer = csv.DictWriter(
@@ -313,17 +320,34 @@ class GenerationPipeline:
 
         return filter_summary
 
+    def _str_to_dict(self, q: str) -> Dict:
+        """escapes single/double quotes in the inputs field of the string and converts it to a dictionary"""
+
+        def replacer(s: re.Match) -> str:
+            s = re.sub(r"(?<!\\)\'", "\\'", s.group(0))
+            s = re.sub(r"(?<!\\)\"", '\\"', s)
+            return s
+
+        # define the regular expression pattern to match single and double quotes
+        pattern = r"""(?<=["']inputs["']: ["']).*(?=["'], ["']targets)"""
+
+        # replace the matched quotes with escaped quotes
+        escaped_str = re.sub(pattern, replacer, q)
+
+        return ast.literal_eval(escaped_str)
+
     def _generation_to_dicts(self, msg_content: str) -> Tuple[List[Dict], int]:
         """
         returns list of dictionary representing generated questions
         """
+
         # change split word? what if 'Question: \d' in examples
         generate_qs = re.split("Question \d:", msg_content)
         generated_dict_examples, errs = [], 0
         for i, q in enumerate(generate_qs):
             if i == 0:  # end of prompt = "... Question i:"
                 try:
-                    msg_dict = ast.literal_eval(q)
+                    msg_dict = self._str_to_dict(q)
                     generated_dict_examples.append(msg_dict)
                 except:
                     self.dump_error(q, self.error_file)
@@ -332,7 +356,7 @@ class GenerationPipeline:
                 q = q[q.find("\n") :]
                 q = q.rstrip("\n")
                 try:
-                    msg_dict = ast.literal_eval(q)
+                    msg_dict = self._str_to_dict(q)
                     generated_dict_examples.append(msg_dict)
                 except:
                     self.dump_error(q, self.error_file)
@@ -347,14 +371,24 @@ class GenerationPipeline:
         keys = set(["inputs", "targets", "multiple_choice_targets"])
         out, errs = [], 0
         for q in questions:
-            if len(keys.difference(set(q.keys()))) == 0:
+            if (
+                keys == set(q.keys())
+                and isinstance(q["inputs"], str)
+                and isinstance(q["targets"], list)
+                and isinstance(q["multiple_choice_targets"], list)
+                and all(isinstance(val, str) for val in q["targets"])
+                and all(isinstance(val, str) for val in q["multiple_choice_targets"])
+            ):
                 out.append(q)
             else:
                 self.dump_error(q, self.error_file)
                 errs += 1
+
         return out, errs
 
-    def _duplicate_check(self, task:str, questions:List[Dict]) ->Tuple[List[Dict], int]:
+    def _duplicate_check(
+        self, task: str, questions: List[Dict]
+    ) -> Tuple[List[Dict], int]:
         """
         Filter out exact duplicates based on inputs field
         """
@@ -370,7 +404,7 @@ class GenerationPipeline:
 
         ds_inputs = set([question["inputs"] for question in ds_init])
         generated_inputs = [question["inputs"] for question in questions]
-        
+
         excluded_qs, errs = [], 0
         for i, generated_input in enumerate(generated_inputs):
             if generated_input in ds_inputs:

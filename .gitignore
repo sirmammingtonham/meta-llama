@@ -1,5 +1,6 @@
 # added ignores
-errors/
+ignore*
+errors*/
 private.py
 .DS_Store
 llama_weights13/
