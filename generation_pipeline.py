@@ -331,7 +331,7 @@ class GenerationPipeline:
         # define the regular expression pattern to match single and double quotes
         pattern = r"""(?<=["']inputs["']: ["']).*(?=["'], ["']targets)"""
 
-        # use a lambda function to replace the matched quotes with escaped quotes
+        # replace the matched quotes with escaped quotes
         escaped_str = re.sub(pattern, replacer, q)
 
         return ast.literal_eval(escaped_str)
@@ -376,6 +376,8 @@ class GenerationPipeline:
                 and isinstance(q["inputs"], str)
                 and isinstance(q["targets"], list)
                 and isinstance(q["multiple_choice_targets"], list)
+                and all(isinstance(val, str) for val in q["targets"])
+                and all(isinstance(val, str) for val in q["multiple_choice_targets"])
             ):
                 out.append(q)
             else:
