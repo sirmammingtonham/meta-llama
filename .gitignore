@@ -2,6 +2,7 @@
 errors/
 private.py
 .DS_Store
+llama_weights13/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

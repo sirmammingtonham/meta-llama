@@ -181,7 +181,10 @@ class GenerationPipeline:
                 )
                 # select examples from both real and augmented task dataset
                 D_subset = D_task.select(k_idx_real)
+                D_subset = D_subset.remove_columns(["multiple_choice_scores","idx","is_generated","true_idx"])
                 D_subset_aug = D_task_aug.select(k_idx_aug)
+                if len(D_subset_aug) > 0:
+                    D_subset_aug = D_subset_aug.cast(D_subset.features)
                 D_examples = concatenate_datasets([D_subset, D_subset_aug], axis=0)
                 D_examples = D_examples.shuffle()
                 # construct prompt
