@@ -97,7 +97,7 @@ class GenerationPipeline:
                     json.dump([], f)
                 f.close()
 
-        self.descr_df = pd.read_csv("./bigbench_metadata/task_descriptions.csv")
+        self.descr_df = pd.read_csv("./data/metadata/task_descriptions.csv")
 
     def _init_task_seeds(self, task_seed_size: int, train_dir: str) -> List[str]:
         """

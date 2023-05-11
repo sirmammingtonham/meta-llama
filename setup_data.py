@@ -1,4 +1,4 @@
-from utils.data import init_test_data, init_clean_train_data
+from src.generation.generation_utils import init_test_data, init_clean_train_data
 
 from config import TRAIN_TASKS, TEST_TASKS, IGNORED_TASKS
 
