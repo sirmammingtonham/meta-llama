@@ -46,8 +46,11 @@ class ICLTrainer(Trainer):
             k_examples=self.k_examples,
         )
 
-        # k == 1 since we already set the number of examples in the eval dataset wrapper
-        collate_fn = ICLCollator(self.tokenizer, k_examples=1)
+        collate_fn = ICLCollator(
+            self.tokenizer,
+            k_examples=self.k_examples,
+            for_eval=True,
+        )
 
         return DataLoader(
             dataset,
@@ -65,8 +68,11 @@ class ICLTrainer(Trainer):
             k_examples=self.k_examples,
         )
 
-        # k == 1 since we already set the number of examples in the eval dataset wrapper
-        collate_fn = ICLCollator(self.tokenizer, k_examples=1)
+        collate_fn = ICLCollator(
+            self.tokenizer,
+            k_examples=self.k_examples,
+            for_eval=True,
+        )
 
         return DataLoader(
             dataset,

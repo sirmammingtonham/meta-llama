@@ -12,6 +12,7 @@ def train(args):
     # setup models and peft
     base_model = AutoModelForCausalLM.from_pretrained(args.model_str)
     tokenizer = AutoTokenizer.from_pretrained(args.model_str)
+    tokenizer.pad_token = tokenizer.eos_token
 
     peft_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,

@@ -12,13 +12,14 @@ def load_datasets(
     dataset_names: List[str],
     use_augmented=False,
     preprocess_fn=lambda x: x,
+    data_dir="../data/augment_train_v2",
 ) -> Dict[str, Dataset]:
     if use_augmented:
         return {
             name: preprocess_fn(
                 load_dataset(
                     "json",
-                    data_files=f"training_data_generated/{name}.json",
+                    data_files=f"{data_dir}/{name}.json",
                 )
             )
             for name in dataset_names
@@ -98,6 +99,7 @@ class ICLCollator:
     k_examples: int = 16
     max_length: int = 1024
     return_tensors: str = "pt"
+    for_eval: bool = False
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
@@ -105,6 +107,11 @@ class ICLCollator:
         * length of [features] should be (k_examples * batch_size)
         """
         batch = {"input_ids": [], "attention_mask": [], "token_type_ids": []}
+
+        if self.for_eval:
+            # if collation for evaluation, features is a List[List[Dict[str, Any]]] 
+            # where the inner list contains our k_examples, so flatten it
+            features = list(itertools.chain.from_iterable(features))
 
         for i in range(0, len(features), self.k_examples):
             batch["input_ids"].append(
@@ -166,7 +173,7 @@ class EvalDatasetWrapper(data.Dataset):
         random_examples = np.random.randint(
             0, len(self.train_dataset), size=(self.k_examples - 1,)
         )
-        examples = [self.train_dataset[i] for i in random_examples]
+        examples = [self.train_dataset[i.item()] for i in random_examples]
 
         target = self.eval_dataset[index]
 
