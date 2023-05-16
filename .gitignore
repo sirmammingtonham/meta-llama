@@ -1,4 +1,6 @@
 # added ignores
+wandb/
+output/
 ignore*
 errors*/
 private.py

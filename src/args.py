@@ -19,9 +19,21 @@ def create_args() -> argparse.ArgumentParser:
         help="Whether or not to run evaluation",
     )
     parser.add_argument(
+        "--train_dir",
+        type=str,
+        default="data/augment_train_v2",
+        help="Directory with the training data",
+    )
+    parser.add_argument(
+        "--test_dir",
+        type=str,
+        default="data/baseline_test",
+        help="Directory with the training data",
+    )
+    parser.add_argument(
         "--model_str",
         type=str,
-        default="decapoda-research/llama-7b-hf",
+        default="huggyllama/llama-7b",
         help="Pretrained huggingface model to finetune",
     )
     parser.add_argument(
@@ -34,7 +46,7 @@ def create_args() -> argparse.ArgumentParser:
         "--data_method",
         type=str,
         default="direct",
-        help="Direct or channel",
+        help="Direct or channel (evaluation with channel still needs to be coded)",
     )
     parser.add_argument(
         "--include_choices",
@@ -65,7 +77,10 @@ def create_args() -> argparse.ArgumentParser:
         help="Initial learning rate (after the potential warmup period) to use.",
     )
     parser.add_argument(
-        "--weight_decay", type=float, default=0.0, help="Weight decay to use."
+        "--weight_decay",
+        type=float,
+        default=0.0,
+        help="Weight decay to use.",
     )
     parser.add_argument(
         "--num_train_epochs",
@@ -133,4 +148,4 @@ def create_args() -> argparse.ArgumentParser:
         help="Number of in context examples to use",
     )
 
-    return parser
+    return parser.parse_args()

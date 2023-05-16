@@ -10,9 +10,9 @@ import itertools
 
 def load_datasets(
     dataset_names: List[str],
+    data_dir: str,
     use_augmented=False,
     preprocess_fn=lambda x: x,
-    data_dir="../data/augment_train_v2",
 ) -> Dict[str, Dataset]:
     if use_augmented:
         return {
@@ -26,7 +26,7 @@ def load_datasets(
         }
     else:
         return {
-            name: preprocess_fn(load_dataset(f"tasksource/{name}"))
+            name: preprocess_fn(load_dataset(f"tasksource/bigbench", name))
             for name in dataset_names
         }
 
@@ -86,7 +86,6 @@ def preprocess_dataset(
 
     ds = ds.map(
         preprocess_function,
-        remove_columns=ds.column_names,
         batched=True,
         num_proc=num_procs,
     )
@@ -97,7 +96,7 @@ def preprocess_dataset(
 class ICLCollator:
     tokenizer: PreTrainedTokenizerBase
     k_examples: int = 16
-    max_length: int = 1024
+    max_length: int = 2048
     return_tensors: str = "pt"
     for_eval: bool = False
 
@@ -105,11 +104,12 @@ class ICLCollator:
         """
         * creates batches for in context/few shot learning
         * length of [features] should be (k_examples * batch_size)
+        * if for_eval create a labels field
         """
         batch = {"input_ids": [], "attention_mask": [], "token_type_ids": []}
 
         if self.for_eval:
-            # if collation for evaluation, features is a List[List[Dict[str, Any]]] 
+            # if collation for evaluation, features is a List[List[Dict[str, Any]]]
             # where the inner list contains our k_examples, so flatten it
             features = list(itertools.chain.from_iterable(features))
 
@@ -120,7 +120,7 @@ class ICLCollator:
                         example["input_ids"]
                         for example in features[i : i + self.k_examples]
                     )
-                )
+                )[: self.max_length]
             )
             batch["attention_mask"].append(
                 list(
@@ -128,7 +128,7 @@ class ICLCollator:
                         example["attention_mask"]
                         for example in features[i : i + self.k_examples]
                     )
-                )
+                )[: self.max_length]
             )
             batch["token_type_ids"].append(
                 list(
@@ -136,7 +136,7 @@ class ICLCollator:
                         example["token_type_ids"]
                         for example in features[i : i + self.k_examples]
                     )
-                )
+                )[: self.max_length]
             )
 
         batch = self.tokenizer.pad(
@@ -147,24 +147,23 @@ class ICLCollator:
             return_tensors=self.return_tensors,
         )
 
+        if self.for_eval:
+            batch["labels"] = batch["input_ids"].clone()
+            batch["labels"] *= batch["token_type_ids"]
+
         return batch
 
 
+@dataclass
 class EvalDatasetWrapper(data.Dataset):
     """
     Simple Dataset wrapper that returns k_examples-1 random
     examples from the training set for each evaluation example
     """
 
-    def __init__(
-        self,
-        train_dataset: data.Dataset,
-        eval_dataset: data.Dataset,
-        k_examples=16,
-    ):
-        self.train_dataset = train_dataset
-        self.eval_dataset = eval_dataset
-        self.k_examples = k_examples
+    train_dataset: Dataset
+    eval_dataset: Dataset
+    k_examples: int = 16
 
     def __len__(self):
         return len(self.eval_dataset)
@@ -174,6 +173,9 @@ class EvalDatasetWrapper(data.Dataset):
             0, len(self.train_dataset), size=(self.k_examples - 1,)
         )
         examples = [self.train_dataset[i.item()] for i in random_examples]
+        for x in examples:
+            # ignore label mask for the examples, we only care about the last one
+            x["token_type_ids"] = [0] * len(x["token_type_ids"])
 
         target = self.eval_dataset[index]
 

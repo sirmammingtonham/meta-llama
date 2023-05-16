@@ -26,19 +26,17 @@ class ICLModel(nn.Module):
         labels: Optional[torch.Tensor] = None,
         **kwargs,
     ) -> dict:
-
         outputs = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             **kwargs,
         )
 
-        logits = outputs.logits
-
         if labels is None:
             labels = input_ids
 
         # Shift for autoregressive loss (tokens < n predict n)
+        logits = outputs.logits[..., :-1, :].contiguous()
         labels = labels[..., 1:].contiguous()
         label_mask = token_type_ids[..., 1:].contiguous()
 
@@ -49,9 +47,10 @@ class ICLModel(nn.Module):
 
         # Apply label mask and calculate average loss per label token in each sequence
         losses = losses.view(logits.shape[0], logits.shape[1]) * label_mask
-        loss = losses.sum(1) / label_mask.sum(1)
+        losses = losses.sum(1) / label_mask.sum(1)
 
         return {
-            "loss": loss,
-            "logits": logits,
+            "logits": outputs.logits,
+            "losses": losses, # for channel method if we ever implement it
+            "loss": losses.mean(),
         }

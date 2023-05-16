@@ -17,7 +17,7 @@ class ICLTrainer(Trainer):
         *args,
         **kwargs,
     ):
-        super().__init__(tokenizer, *args, **kwargs)
+        super().__init__(tokenizer=tokenizer, *args, **kwargs)
         self.k_examples = k_examples
 
     def get_train_dataloader(self) -> DataLoader:
@@ -28,7 +28,7 @@ class ICLTrainer(Trainer):
 
         train_dataloader_dict = {
             k: DataLoader(
-                v,
+                v["train"],
                 batch_size=loader_batch_size,
                 collate_fn=collate_fn,
                 shuffle=True,
@@ -40,9 +40,12 @@ class ICLTrainer(Trainer):
         return MultitaskDataloader(train_dataloader_dict)
 
     def get_eval_dataloader(self, eval_dataset: Optional[Dataset] = None) -> DataLoader:
+        eval_dataset = eval_dataset["train"].train_test_split(
+            test_size=0.2
+        )  # dont use the actual test set for validation
         dataset = EvalDatasetWrapper(
             eval_dataset["train"],
-            eval_dataset["validation"],
+            eval_dataset["test"],
             k_examples=self.k_examples,
         )
 
@@ -64,7 +67,7 @@ class ICLTrainer(Trainer):
     def get_test_dataloader(self, test_dataset: Optional[Dataset] = None) -> DataLoader:
         dataset = EvalDatasetWrapper(
             test_dataset["train"],
-            test_dataset["test"],
+            test_dataset["validation"],
             k_examples=self.k_examples,
         )
 
@@ -85,7 +88,7 @@ class ICLTrainer(Trainer):
 
     def evaluate(
         self,
-        eval_datasets: Dict[str, Dataset] = None,
+        eval_dataset: Dict[str, Dataset] = None,
         ignore_keys: Optional[List[str]] = None,
         metric_key_prefix: str = "eval",
     ) -> Dict[str, float]:
@@ -93,19 +96,49 @@ class ICLTrainer(Trainer):
         Run evaluations on each dataset in eval datasets and returns metrics.
         """
 
-        if eval_datasets is None and self.eval_dataset is None:
-            raise ValueError("Trainer: evaluation requires an eval_dataset.")
-        eval_datasets = (
-            eval_datasets if eval_datasets is not None else self.eval_dataset
+        metrics = super().evaluate(
+            eval_dataset,
+            ignore_keys,
+            f"{metric_key_prefix}",
         )
+
+        metrics.pop(f"{metric_key_prefix}_runtime")
+        metrics.pop(f"{metric_key_prefix}_samples_per_second")
+        metrics.pop(f"{metric_key_prefix}_steps_per_second")
+
+        return metrics
+
+    def predict(
+        self,
+        test_dataset: Dict[str, Dataset] = None,
+        ignore_keys: Optional[List[str]] = None,
+        metric_key_prefix: str = "test",
+    ) -> Dict[str, float]:
+        """
+        Run evaluations on each dataset in eval datasets and returns metrics.
+        """
+
+        if test_dataset is None and self.eval_dataset is None:
+            raise ValueError("Trainer: evaluation requires an eval_dataset.")
+        test_dataset = test_dataset if test_dataset is not None else self.eval_dataset
 
         metrics = {}
 
-        for name, dataset in eval_datasets.items():
+        for name, dataset in test_dataset.items():
+            print("-" * 100)
+            print(name)
+            print("-" * 100)
             metrics.update(
-                super().evaluate(
+                super()
+                .predict(
                     dataset,
                     ignore_keys,
-                    f"{metric_key_prefix}_{name}",
+                    f"{metric_key_prefix}/{name}",
                 )
+                .metrics
             )
+            metrics.pop(f"{metric_key_prefix}/{name}_runtime")
+            metrics.pop(f"{metric_key_prefix}/{name}_samples_per_second")
+            metrics.pop(f"{metric_key_prefix}/{name}_steps_per_second")
+
+        return metrics
