@@ -18,11 +18,9 @@ from config import TRAIN_TASKS, TEST_TASKS
 def train(args):
     # setup models and peft
     base_model = AutoModelForCausalLM.from_pretrained(
-        args.model_str, load_in_8bit=True, device_map="auto"
+        args.model_str,  load_in_8bit=True, device_map="auto"
     )
-    tokenizer = AutoTokenizer.from_pretrained(
-        args.model_str
-    )
+    tokenizer = AutoTokenizer.from_pretrained(args.model_str)
     tokenizer.bos_token = "<s>"
     tokenizer.eos_token = "</s>"
     tokenizer.pad_token = tokenizer.eos_token
@@ -46,11 +44,13 @@ def train(args):
     model = ICLModel(base_model, k_examples=args.k)
 
     # setup datasets and dataloaders
+    assert (
+        args.data_method == "direct"
+    ), "we have not implemented evaluation for channel method yet!"
     preprocess_fn = lambda ds: preprocess_dataset(
         ds,
         tokenizer,
         method=args.data_method,
-        include_choices=args.include_choices,
         num_procs=args.preprocessing_num_workers,
     )
     train_datasets = load_datasets(
@@ -97,6 +97,11 @@ def train(args):
 
     def compute_metrics(eval_preds: EvalPrediction) -> dict:
         preds, labels = eval_preds
+
+        # shift for autoregressive
+        labels = labels[:, 1:].reshape(-1)
+        preds = preds[:, :-1].reshape(-1)
+
         # select only the non padding ones
         preds = preds[(preds != -100) & (preds != 0)]
         labels = labels[(labels != -100) & (labels != 0)]

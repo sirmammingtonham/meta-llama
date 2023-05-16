@@ -49,11 +49,6 @@ def create_args() -> argparse.ArgumentParser:
         help="Direct or channel (evaluation with channel still needs to be coded)",
     )
     parser.add_argument(
-        "--include_choices",
-        action="store_true",
-        help="Whether to explicitly list possible choices in the prompt",
-    )
-    parser.add_argument(
         "--no_augment",
         action="store_true",
         help="Pass this flag to use non-augmented data for training",

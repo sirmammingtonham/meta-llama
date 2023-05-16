@@ -35,25 +35,43 @@ def preprocess_dataset(
     ds: Dataset,
     tokenizer: PreTrainedTokenizerBase,
     method="direct",
-    include_choices=False,
     num_procs=8,
 ) -> Dataset:
-    def preprocess_function(examples):
+    def remove_choices(s: str) -> str:
+        choice_start = s.find("\n  choice:")
+        if choice_start == -1:
+            return s
+        return s[:choice_start]
+
+    def target_to_index(choices: List, target: List[str]) -> int:
+        if not target:
+            return -1
+        try:
+            index = choices.index(target[0])
+            return index
+        except ValueError:
+            return -1
+
+    def preprocess_function(examples: dict) -> dict:
         """
         * tokenizes dataset
         * token_type_ids are 1 where there are label tokens and 0 otherwise
         """
-        if include_choices:
-            inputs = [
-                f"{inp}\nchoice: " + "\nchoice: ".join(choices) + " \n\n"
-                for inp, choices in zip(
-                    examples["inputs"], examples["multiple_choice_targets"]
-                )
-            ]
-        else:
-            inputs = [f"{inp} \n\n" for inp in examples["inputs"]]
+        inputs = [
+            f"{remove_choices(inp)}\n"
+            + "\n".join([f"choice {i}: {choice}" for i, choice in enumerate(choices)])
+            + "\nanswer:"
+            for inp, choices in zip(
+                examples["inputs"], examples["multiple_choice_targets"]
+            )
+        ]
 
-        targets = [" ".join(targets) + " \n\n\n" for targets in examples["targets"]]
+        targets = [
+            f"{target_to_index(choices, target)}\n\n"
+            for target, choices in zip(
+                examples["targets"], examples["multiple_choice_targets"]
+            )
+        ]
 
         # swap inputs and targets if method is "channel"
         if method == "channel":
@@ -78,8 +96,8 @@ def preprocess_dataset(
             target_attention = target_tokenized["attention_mask"][i]
             outputs["attention_mask"].append(input_attention + target_attention)
 
-            input_token_type = [0] * len(input_ids)
-            target_token_type = [1] * (len(target_ids) - 2) + [0, 0]
+            input_token_type = [0] * (len(input_ids) + 1)
+            target_token_type = [1] * (len(target_ids) - 3) + [0, 0]
             outputs["token_type_ids"].append(input_token_type + target_token_type)
 
         return outputs
