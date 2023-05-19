@@ -137,6 +137,7 @@ class ICLTrainer(Trainer):
                 )
                 .metrics
             )
+            metrics.pop(f"{metric_key_prefix}/{name}_loss")
             metrics.pop(f"{metric_key_prefix}/{name}_runtime")
             metrics.pop(f"{metric_key_prefix}/{name}_samples_per_second")
             metrics.pop(f"{metric_key_prefix}/{name}_steps_per_second")

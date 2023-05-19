@@ -18,7 +18,7 @@ from config import TRAIN_TASKS, TEST_TASKS
 def train(args):
     # setup models and peft
     base_model = AutoModelForCausalLM.from_pretrained(
-        args.model_str,  load_in_8bit=True, device_map="auto"
+        args.model_str, load_in_8bit=True, device_map="auto"
     )
     tokenizer = AutoTokenizer.from_pretrained(args.model_str)
     tokenizer.bos_token = "<s>"
@@ -67,20 +67,22 @@ def train(args):
     )
 
     training_args = TrainingArguments(
-        output_dir=args.output_dir,
-        num_train_epochs=args.num_train_epochs,
-        per_device_train_batch_size=args.per_device_train_batch_size,
-        per_device_eval_batch_size=args.per_device_eval_batch_size,
-        learning_rate=args.learning_rate,
-        weight_decay=args.weight_decay,
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
-        report_to=args.report_to,
-        seed=args.seed,
-        logging_dir="./logs",
-        evaluation_strategy="epoch",
         # ddp_backend="gloo",
-        save_total_limit=5,
+        evaluation_strategy="no",  # "epoch",
         fp16=True,
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
+        learning_rate=args.learning_rate,
+        logging_dir="./logs",
+        logging_steps=50,
+        num_train_epochs=args.num_train_epochs,
+        output_dir=f"{args.output_dir}/{args.run_name}",
+        per_device_eval_batch_size=args.per_device_eval_batch_size,
+        per_device_train_batch_size=args.per_device_train_batch_size,
+        report_to=args.report_to,
+        run_name=args.run_name,
+        save_total_limit=5,
+        seed=args.seed,
+        weight_decay=args.weight_decay,
     )
 
     metric = evaluate.load("accuracy")
@@ -90,10 +92,7 @@ def train(args):
     ) -> torch.Tensor:
         if isinstance(logits, tuple):
             logits = logits[0]
-        label_mask = torch.where(
-            labels != 0, torch.ones_like(labels), torch.zeros_like(labels)
-        )
-        return logits.argmax(dim=-1) * label_mask
+        return logits.argmax(dim=-1)
 
     def compute_metrics(eval_preds: EvalPrediction) -> dict:
         preds, labels = eval_preds
@@ -102,9 +101,20 @@ def train(args):
         labels = labels[:, 1:].reshape(-1)
         preds = preds[:, :-1].reshape(-1)
 
-        # select only the non padding ones
+        label_mask = np.where(labels != 0, np.ones_like(labels), np.zeros_like(labels))
+
+        preds *= label_mask
+
+        # select only the label ones (ignore padding)
         preds = preds[(preds != -100) & (preds != 0)]
         labels = labels[(labels != -100) & (labels != 0)]
+
+        # if the model somehow generated 0 as a token
+        if len(preds) != len(labels):
+            max_len = max(len(preds), len(labels))
+            preds = np.pad(preds, (0, max_len - len(preds)), constant_values=-100)
+            labels = np.pad(labels, (0, max_len - len(labels)), constant_values=-100)
+
         return metric.compute(predictions=preds, references=labels)
 
     trainer = ICLTrainer(
@@ -127,7 +137,13 @@ def train(args):
         trainer.save_state()
 
     if args.evaluate:
-        metrics = trainer.predict()
+        metrics = []
+        for _ in range(args.num_evals):
+            metrics.append(trainer.predict())
+        metrics = {
+            key: sum(d[key] for d in metrics) / len(metrics)
+            for key in metrics[0].keys()
+        }
         trainer.log_metrics("test", metrics)
         trainer.save_metrics("test", metrics)
 

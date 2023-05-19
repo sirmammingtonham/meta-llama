@@ -31,6 +31,12 @@ def create_args() -> argparse.ArgumentParser:
         help="Directory with the training data",
     )
     parser.add_argument(
+        "--run_name",
+        type=str,
+        default=None,
+        help="Name for the run on wandb",
+    )
+    parser.add_argument(
         "--model_str",
         type=str,
         default="huggyllama/llama-7b",
@@ -64,6 +70,12 @@ def create_args() -> argparse.ArgumentParser:
         type=int,
         default=128,
         help="Batch size (per device) for the evaluation dataloader.",
+    )
+    parser.add_argument(
+        "--num_evals",
+        type=int,
+        default=5,
+        help="Number of times to evaluate before averaging",
     )
     parser.add_argument(
         "--learning_rate",

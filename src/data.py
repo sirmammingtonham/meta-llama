@@ -1,4 +1,4 @@
-from datasets import Dataset, load_dataset
+from datasets import Dataset, load_dataset, DatasetDict
 from dataclasses import dataclass
 from typing import List, Dict, Any
 from transformers import PreTrainedTokenizerBase
@@ -26,9 +26,24 @@ def load_datasets(
         }
     else:
         return {
-            name: preprocess_fn(load_dataset(f"tasksource/bigbench", name))
+            name: DatasetDict(
+                {
+                    "train": preprocess_fn(
+                        load_dataset(f"tasksource/bigbench", name, split="train")
+                    ),
+                    "validation": preprocess_fn(
+                        load_dataset(
+                            "json", data_files=f"{data_dir}/{name}.json", split="train"
+                        )
+                    ),
+                }
+            )
             for name in dataset_names
         }
+        # return {
+        #     name: preprocess_fn(load_dataset(f"tasksource/bigbench", name))
+        #     for name in dataset_names
+        # }
 
 
 def preprocess_dataset(
