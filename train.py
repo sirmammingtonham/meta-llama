@@ -7,7 +7,7 @@ from transformers import (
     TrainingArguments,
     EvalPrediction,
 )
-from peft import get_peft_model, prepare_model_for_int8_training, LoraConfig, TaskType
+from peft import get_peft_model, prepare_model_for_int8_training, LoraConfig, TaskType, PeftModel, PeftConfig
 from src.data import load_datasets, preprocess_dataset
 from src.args import create_args
 from src.model import ICLModel
@@ -25,21 +25,24 @@ def train(args):
     tokenizer.eos_token = "</s>"
     tokenizer.pad_token = tokenizer.eos_token
 
-    peft_config = LoraConfig(
-        task_type=TaskType.CAUSAL_LM,
-        inference_mode=False,
-        r=8,
-        lora_alpha=16,
-        lora_dropout=0.05,
-        bias="none",
-        target_modules=[
-            "q_proj",
-            "v_proj",
-        ],
-    )
-    base_model = prepare_model_for_int8_training(base_model)
-    base_model = get_peft_model(base_model, peft_config)
-    base_model.print_trainable_parameters()
+    if args.load_lora:
+        base_model = PeftModel.from_pretrained(base_model, f"output/llama7b_augment/model")
+    else:
+        peft_config = LoraConfig(
+            task_type=TaskType.CAUSAL_LM,
+            inference_mode=False,
+            r=8,
+            lora_alpha=16,
+            lora_dropout=0.05,
+            bias="none",
+            target_modules=[
+                "q_proj",
+                "v_proj",
+            ],
+        )
+        base_model = prepare_model_for_int8_training(base_model)
+        base_model = get_peft_model(base_model, peft_config)
+        base_model.print_trainable_parameters()
 
     model = ICLModel(base_model, k_examples=args.k)
 
@@ -130,6 +133,7 @@ def train(args):
     if args.train:
         train_result = trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
         trainer.save_model()
+        base_model.save_pretrained(f"{args.output_dir}/{args.run_name}/model")
         metrics = train_result.metrics
 
         trainer.log_metrics("train", metrics)

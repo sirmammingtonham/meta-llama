@@ -43,6 +43,11 @@ def create_args() -> argparse.ArgumentParser:
         help="Pretrained huggingface model to finetune",
     )
     parser.add_argument(
+        "--load_lora",
+        action="store_true",
+        help="Whether to load the lora adapter weights",
+    )
+    parser.add_argument(
         "--k",
         type=int,
         default=16,
